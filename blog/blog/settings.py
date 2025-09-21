@@ -9,8 +9,19 @@ https://docs.djangoproject.com/en/3.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
+import os
+import dj_database_url
 
+from datetime import timedelta
 from pathlib import Path
+
+from configurations import Configuration
+from configurations import values
+from corsheaders.defaults import default_headers
+from corsheaders.defaults import default_methods
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,6 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'blog_posts',
 ]
 
 MIDDLEWARE = [
@@ -73,12 +86,17 @@ WSGI_APPLICATION = 'blog.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+DATABASE_NAME = os.getenv('DATABASE_NAME', 'blog_db')
+DATABASE_HOST = os.getenv('DATABASE_HOST', 'localhost')
+DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
+DATABASE_PORT = os.getenv('DATABASE_PORT', '5432')
+DATABASE_USER = os.getenv('DATABASE_USER', 'postgres')
+
+DATABASES = {}
+DATABASES['default'] = dj_database_url.config(
+    default=f'postgres://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}'
+)
+
 
 
 # Password validation
@@ -123,3 +141,64 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication',
+    ],
+    'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
+    }
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': os.getenv("JWT_SIGNING_KEY"),
+    'AUTH_HEADER_TYPES': ("Bearer",),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+    'verbose': {
+        'format': '[{asctime}s] PID: {process:d} [{levelname}s] {message}s',
+        'style': '{',
+        },
+        'simple': {
+            'format': '[{asctime}s] PID: {process:d} [{levelname}s] {message}s',
+            'style': '{',
+        },
+    },
+    'handlers': {
+    'file': {
+        'level': 'DEBUG',
+        'class': 'logging.FileHandler',
+        'filename': os.getenv('DJANGO_LOG_PATH'),
+    },
+    'console': {
+        'class': 'logging.StreamHandler',
+            },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': os.getenv('DJANGO_LOG_LEVEL').upper(),
+            'propagate': True,
+            'formatter': 'verbose',
+        },
+        'django.db.backends': {
+        'handlers': ['console'],
+        'level': 'INFO',
+            },
+    },
+}
