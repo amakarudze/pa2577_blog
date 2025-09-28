@@ -1,0 +1,232 @@
+# Blog
+# --------------------
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog-service
+  labels:
+    app: blog
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 3000
+    nodePort: 30001
+    protocol: TCP
+  selector:
+    app: blog
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blog-api
+  labels:
+    app: blog
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: blog
+  template:
+    metadata:
+      labels:
+        app: blog
+    spec:
+      initContainers:
+      - name: run-migrations
+        image: amakarudze/blog:version1
+        command: ["python", "manage.py", "migrate"]
+        env:
+          - name: POSTGRES_HOST
+            value: "postgres.default"
+          - name: POSTGRES_PORT
+            value: "5432"
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_DB
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_PASSWORD
+      containers:
+      - name: blog-api
+        image: amakarudze/blog:version1
+        ports:
+        - containerPort: 8001
+        env:
+          - name: POSTGRES_HOST
+            value: "postgres.default"
+          - name: POSTGRES_PORT
+            value: "5432"
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_DB
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_PASSWORD
+---
+# Accounts
+# -------------------- 
+apiVersion: v1
+kind: Service
+metadata:
+  name: accounts-service
+  labels:
+    app: accounts
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 3001
+    nodePort: 30002
+    protocol: TCP
+  selector:
+    app: accounts
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounts-api
+  labels:
+    app: accounts
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: accounts
+  template:
+    metadata:
+      labels:
+        app: accounts
+    spec:
+      containers:
+      - name: accounts-api
+        image: amakarudze/accounts:version1
+        ports:
+        - containerPort: 8000
+        env:
+          - name: POSTGRES_HOST
+            value: "postgres.default"
+          - name: POSTGRES_PORT
+            value: "5432"
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_DB
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-secret
+                key: POSTGRES_PASSWORD
+---
+# Postgres
+#----------
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: postgres-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100M 
+  accessModes:
+    - ReadWriteOnce
+  hostPath: 
+    path: "/data"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim 
+metadata:
+  labels:
+    app: postgres
+  name: postgres-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce 
+  resources:
+    requests:
+      storage: 100M 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: postgres
+  template:
+    metadata:
+      labels:
+        name: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: amakarudze/postgres-db:version1
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - mountPath: /data/db
+              name: postgres-volume-mount
+      volumes:
+        - name: postgres-volume-mount
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+  selector:
+    name: postgres
+---

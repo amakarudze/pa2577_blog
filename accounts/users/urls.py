@@ -17,10 +17,6 @@ router.register(r'groups', views.GroupViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path(
-        "health/",
-        views.Health.as_view(),
-    ),
-    path(
         "token/",
         TokenObtainPairView.as_view(),
     ),

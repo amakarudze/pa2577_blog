@@ -31,10 +31,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-7*9iktbyb#7pq^w743ntra$1lj4%6h-#r089-w&pg+vt3mh$+3'
+SECRET_KEY = os.getenv('SECRET_KEY', 'hello')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', True)
 
 ALLOWED_HOSTS = []
 
@@ -86,15 +86,15 @@ WSGI_APPLICATION = 'blog.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASE_NAME = os.getenv('DATABASE_NAME', 'blog_db')
-DATABASE_HOST = os.getenv('DATABASE_HOST', 'localhost')
-DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
-DATABASE_PORT = os.getenv('DATABASE_PORT', '5432')
-DATABASE_USER = os.getenv('DATABASE_USER', 'postgres')
+POSTGRES_DB = os.getenv('POSTGRES_DB', 'blog_db')
+POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD', '')
+POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+POSTGRES_USER = os.getenv('POSTGRES_USER', 'postgres')
 
 DATABASES = {}
 DATABASES['default'] = dj_database_url.config(
-    default=f'postgres://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}'
+    default=f'postgres://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
 )
 
 
@@ -146,8 +146,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTStatelessUserAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
-    'DEFAULT_RENDERER_CLASSES': ('rest_framework.renderers.JSONRenderer',),
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
