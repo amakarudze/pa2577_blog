@@ -9,9 +9,8 @@ microservice architecture.
 To run this project, you need to have the following setup on your local environment:
 - Docker 
 - Kubernetes 
-- Minikube
+- Minikube (maybe)
 - Git
-- An IDE
 
 ## Installation
 1. Clone this repository by running the command below in command line/terminal:
