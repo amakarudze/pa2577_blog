@@ -36,6 +36,7 @@ spec:
       initContainers:
       - name: run-migrations
         image: amakarudze/blog:version1
+        imagePullPolicy: Always
         command: ["python", "manage.py", "migrate"]
         env:
           - name: POSTGRES_HOST
