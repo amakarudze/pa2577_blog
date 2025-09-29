@@ -60,6 +60,7 @@ spec:
       containers:
       - name: blog-api
         image: amakarudze/blog:version1
+        imagePullPolicy: Always
         ports:
         - containerPort: 8001
         env:
@@ -120,6 +121,7 @@ spec:
       containers:
       - name: accounts-api
         image: amakarudze/accounts:version1
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
