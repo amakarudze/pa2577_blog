@@ -38,8 +38,14 @@ command while in the root folder:
 This command create the containers for the microservices and the postgres database and runs the migration for the 
 database `blog_db`, which is used by both microservices.
 
-6. To run the application, first you need to create a superuser account, to enable you to authenticate to the application. 
-To do this, you need to access one of the containers of `accounts` by running the following command:
+## Usage
+
+To run the application, first you need to create a superuser account, to enable you to authenticate to the application. 
+You can see the pod IDs by running the following command:
+
+```kubectl get pods```
+
+After this, you need to access one of the containers of `accounts` by running the following command:
 
 ```kubectl exec -it <<accounts_pod_id>> -- python manage.py createsuperuser```
 
@@ -48,3 +54,13 @@ and enter the details you want to use to create the superuser account.
 After creating the superuser account, you will need to expose the APIs, at least one instance of `accounts` and 
 at least one instance of `blog`. To do this, open two terminal/command line windows and navigate to the `pa2577_blog` 
 folder in each of the windows.
+
+In each of the windows, type one of the following command, with port 8000 for `accounts` API and port 8001 for `blog` API:
+
+```kubectl port-forward <<accounts_pod_id>> 8000:8000```
+
+```kubectl port-forward <<blog_pod_id>> 8001:8001```
+
+Open the web browser and open the following URLs `http://127.0.0.1:8000` and `http://127.0.0.1:8001` to access the services.
+Login with your user account via the `accounts` microservice and refresh the tab for the `blog` microservice and you should see
+that you are also now logged into the `blog` microservice through the token acquired from the `accounts` microservice.
